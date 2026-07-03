@@ -1,0 +1,26 @@
+{
+  "name": "taskflow-api",
+  "version": "1.0.0",
+  "description": "RESTful API for TaskFlow task manager, built with Node.js and Express",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "express",
+    "node",
+    "taskflow",
+    "api"
+  ],
+  "author": "R. Goutham",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0"
+  }
+}
