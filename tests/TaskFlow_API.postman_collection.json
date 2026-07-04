@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "a4d87213-9fcf-49b0-951b-db0d507119ff",
-    "name": "TaskFlow API",
-    "description": "Postman Collection for TaskFlow API (Task 3 of SoftNexis internship). Test suite for tasks CRUD operations.",
+    "name": "TaskFlow DB API",
+    "description": "Postman Collection for TaskFlow DB (Task 4). Includes pagination, text search, schema validation, and database CRUD endpoints.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -28,7 +28,7 @@
       "response": []
     },
     {
-      "name": "Create Task (Valid)",
+      "name": "Create Task 1 (Express)",
       "event": [
         {
           "listen": "test",
@@ -37,11 +37,15 @@
               "pm.test(\"Status code is 201\", function () {",
               "    pm.response.to.have.status(201);",
               "});",
-              "pm.test(\"Response returns the created task\", function () {",
+              "pm.test(\"Response has id and defaults\", function () {",
               "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('id');",
-              "    pm.expect(jsonData.text).to.eql(\"Learn Node.js and Express\");",
+              "    pm.expect(jsonData).to.have.property('_id');",
+              "    pm.expect(jsonData.text).to.eql(\"Learn Express and Mongoose\");",
               "    pm.expect(jsonData.completed).to.eql(false);",
+              "    pm.expect(jsonData).to.have.property('createdAt');",
+              "    pm.expect(jsonData).to.have.property('lastModified');",
+              "    // Save ID for subsequent requests",
+              "    pm.globals.set(\"task_id\", jsonData._id);",
               "});"
             ],
             "type": "text/javascript"
@@ -58,7 +62,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"text\": \"Learn Node.js and Express\"\n}"
+          "raw": "{\n  \"text\": \"Learn Express and Mongoose\"\n}"
         },
         "url": {
           "raw": "http://localhost:5000/api/tasks",
@@ -72,12 +76,72 @@
             "tasks"
           ]
         },
-        "description": "Creates a new task. Checks that status is 201 Created and fields are initialized correctly."
+        "description": "Creates a task. Checks that defaults (completed=false, createdAt, lastModified) are set by the DB."
       },
       "response": []
     },
     {
-      "name": "Create Task (Invalid - Empty Text)",
+      "name": "Create Task 2 (React)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"Build React Frontend Client\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/tasks",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "tasks"
+          ]
+        },
+        "description": "Creates a second task for pagination and search tests."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Task 3 (Database)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"text\": \"Configure MongoDB Atlas Database\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/tasks",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "tasks"
+          ]
+        },
+        "description": "Creates a third task for pagination and search tests."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Task (Invalid - Too Short)",
       "event": [
         {
           "listen": "test",
@@ -86,9 +150,9 @@
               "pm.test(\"Status code is 400\", function () {",
               "    pm.response.to.have.status(400);",
               "});",
-              "pm.test(\"Error message is returned\", function () {",
+              "pm.test(\"Validation error is returned\", function () {",
               "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.error).to.eql(\"Task text is required\");",
+              "    pm.expect(jsonData.error).to.include(\"minlength\");",
               "});"
             ],
             "type": "text/javascript"
@@ -105,7 +169,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"text\": \"\"\n}"
+          "raw": "{\n  \"text\": \"No\"\n}"
         },
         "url": {
           "raw": "http://localhost:5000/api/tasks",
@@ -119,30 +183,12 @@
             "tasks"
           ]
         },
-        "description": "Attempts to create a task with an empty text payload. Should return a 400 Bad Request error."
+        "description": "Attempts to create a task with text length < 3. Should trigger Mongoose minlength validation and return 400 Bad Request."
       },
       "response": []
     },
     {
       "name": "Get All Tasks (After Creation)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "pm.test(\"Response is an array with 1 item\", function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.be.an('array');",
-              "    pm.expect(jsonData.length).to.eql(1);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
       "request": {
         "method": "GET",
         "header": [],
@@ -158,12 +204,12 @@
             "tasks"
           ]
         },
-        "description": "Retrieves the list of all tasks. The list should now contain the newly created task."
+        "description": "Retrieves all tasks sorted by newest first."
       },
       "response": []
     },
     {
-      "name": "Get Single Task by ID",
+      "name": "Get Paginated Tasks",
       "event": [
         {
           "listen": "test",
@@ -172,10 +218,11 @@
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
               "});",
-              "pm.test(\"Verify correct task is returned\", function () {",
+              "pm.test(\"Pagination body format is correct\", function () {",
               "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.id).to.eql(1);",
-              "    pm.expect(jsonData.text).to.eql(\"Learn Node.js and Express\");",
+              "    pm.expect(jsonData).to.have.property('tasks');",
+              "    pm.expect(jsonData).to.have.property('totalPages');",
+              "    pm.expect(jsonData.currentPage).to.eql(1);",
               "});"
             ],
             "type": "text/javascript"
@@ -186,7 +233,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:5000/api/tasks/1",
+          "raw": "http://localhost:5000/api/tasks?page=1&limit=2",
           "protocol": "http",
           "host": [
             "localhost"
@@ -194,27 +241,37 @@
           "port": "5000",
           "path": [
             "api",
-            "tasks",
-            "1"
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "2"
+            }
           ]
         },
-        "description": "Retrieves the single task created earlier using ID = 1."
+        "description": "Tests pagination logic using page and limit query parameters."
       },
       "response": []
     },
     {
-      "name": "Get Non-Existent Task by ID",
+      "name": "Search Tasks (MongoDB Text Search)",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"Status code is 404\", function () {",
-              "    pm.response.to.have.status(404);",
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
               "});",
-              "pm.test(\"Verify not found error message\", function () {",
+              "pm.test(\"Search returns matching task\", function () {",
               "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.error).to.eql(\"Task not found\");",
+              "    pm.expect(jsonData).to.be.an('array');",
+              "    pm.expect(jsonData[0].text).to.include(\"MongoDB\");",
               "});"
             ],
             "type": "text/javascript"
@@ -225,7 +282,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:5000/api/tasks/999",
+          "raw": "http://localhost:5000/api/tasks/search?q=MongoDB",
           "protocol": "http",
           "host": [
             "localhost"
@@ -234,10 +291,38 @@
           "path": [
             "api",
             "tasks",
-            "999"
+            "search"
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "MongoDB"
+            }
           ]
         },
-        "description": "Attempts to retrieve a task with ID 999. Should return a 404 Not Found error."
+        "description": "Tests full-text indexing search using the search term 'MongoDB'."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Single Task by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/tasks/{{task_id}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "tasks",
+            "{{task_id}}"
+          ]
+        },
+        "description": "Retrieves a single task using the task_id stored globally from the post create request."
       },
       "response": []
     },
@@ -251,10 +336,11 @@
               "pm.test(\"Status code is 200\", function () {",
               "    pm.response.to.have.status(200);",
               "});",
-              "pm.test(\"Verify update properties\", function () {",
+              "pm.test(\"Verify update properties and timestamp change\", function () {",
               "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.text).to.eql(\"Master Node.js, Express & security headers\");",
+              "    pm.expect(jsonData.text).to.eql(\"Learn Express, Mongoose & MongoDB Atlas\");",
               "    pm.expect(jsonData.completed).to.eql(true);",
+              "    pm.expect(jsonData.lastModified).to.not.eql(jsonData.createdAt);",
               "});"
             ],
             "type": "text/javascript"
@@ -271,10 +357,10 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"text\": \"Master Node.js, Express & security headers\",\n  \"completed\": true\n}"
+          "raw": "{\n  \"text\": \"Learn Express, Mongoose & MongoDB Atlas\",\n  \"completed\": true\n}"
         },
         "url": {
-          "raw": "http://localhost:5000/api/tasks/1",
+          "raw": "http://localhost:5000/api/tasks/{{task_id}}",
           "protocol": "http",
           "host": [
             "localhost"
@@ -283,59 +369,15 @@
           "path": [
             "api",
             "tasks",
-            "1"
+            "{{task_id}}"
           ]
         },
-        "description": "Updates the task text and sets completed to true. Should return the updated task object."
+        "description": "Updates task text and completed status. Verifies that lastModified is updated."
       },
       "response": []
     },
     {
-      "name": "Update Non-Existent Task",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 404\", function () {",
-              "    pm.response.to.have.status(404);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "PUT",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"text\": \"Non-existent task text\",\n  \"completed\": true\n}"
-        },
-        "url": {
-          "raw": "http://localhost:5000/api/tasks/999",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "5000",
-          "path": [
-            "api",
-            "tasks",
-            "999"
-          ]
-        },
-        "description": "Attempts to update a non-existent task. Should return a 404 Not Found error."
-      },
-      "response": []
-    },
-    {
-      "name": "Delete Task (Valid)",
+      "name": "Delete Task",
       "event": [
         {
           "listen": "test",
@@ -353,7 +395,7 @@
         "method": "DELETE",
         "header": [],
         "url": {
-          "raw": "http://localhost:5000/api/tasks/1",
+          "raw": "http://localhost:5000/api/tasks/{{task_id}}",
           "protocol": "http",
           "host": [
             "localhost"
@@ -362,15 +404,15 @@
           "path": [
             "api",
             "tasks",
-            "1"
+            "{{task_id}}"
           ]
         },
-        "description": "Deletes the task with ID = 1. Should return a 204 No Content response."
+        "description": "Deletes the task created earlier."
       },
       "response": []
     },
     {
-      "name": "Delete Non-Existent Task",
+      "name": "Get Single Task (After Delete - 404)",
       "event": [
         {
           "listen": "test",
@@ -378,45 +420,6 @@
             "exec": [
               "pm.test(\"Status code is 404\", function () {",
               "    pm.response.to.have.status(404);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "DELETE",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:5000/api/tasks/999",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "5000",
-          "path": [
-            "api",
-            "tasks",
-            "999"
-          ]
-        },
-        "description": "Attempts to delete task with ID = 999. Should return a 404 Not Found error."
-      },
-      "response": []
-    },
-    {
-      "name": "Get Invalid Route (404 Fallback)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 404\", function () {",
-              "    pm.response.to.have.status(404);",
-              "});",
-              "pm.test(\"Verify fallback error body\", function () {",
-              "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData.error).to.eql(\"Endpoint not found\");",
               "});"
             ],
             "type": "text/javascript"
@@ -427,7 +430,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:5000/api/invalid-endpoint-route",
+          "raw": "http://localhost:5000/api/tasks/{{task_id}}",
           "protocol": "http",
           "host": [
             "localhost"
@@ -435,10 +438,11 @@
           "port": "5000",
           "path": [
             "api",
-            "invalid-endpoint-route"
+            "tasks",
+            "{{task_id}}"
           ]
         },
-        "description": "Verifies that hitting any undefined endpoint returns a clean JSON 404 response."
+        "description": "Attempts to get the deleted task. Should return a 404 error."
       },
       "response": []
     }

@@ -4,25 +4,37 @@ import {
   getTaskById,
   createTask,
   updateTask,
-  deleteTask
+  deleteTask,
+  searchTasks
 } from '../controllers/taskController.js';
 
 const router = Router();
 
-// Routes mapping for the base URL: /api/tasks
+// ==========================================
+// Specialized Routes
+// ==========================================
+
+// GET /api/tasks/search - Search tasks using keyword queries.
+// IMPORTANT: This route must be declared BEFORE '/:id' to avoid conflicts where
+// Express interprets the word 'search' as a task ID parameter.
+router.get('/search', searchTasks);
+
+// ==========================================
+// Standard REST Endpoints
+// ==========================================
+
 router.route('/')
-  // GET /api/tasks - Retrieve all tasks
+  // GET /api/tasks - Retrieve all tasks (optionally supports query params: page, limit)
   .get(getTasks)
-  // POST /api/tasks - Create a new task
+  // POST /api/tasks - Create a new task in the database
   .post(createTask);
 
-// Routes mapping for tasks with specific IDs: /api/tasks/:id
 router.route('/:id')
-  // GET /api/tasks/:id - Retrieve a single task by ID
+  // GET /api/tasks/:id - Retrieve a single task by its database ID
   .get(getTaskById)
-  // PUT /api/tasks/:id - Update an existing task by ID
+  // PUT /api/tasks/:id - Update text or completion status of an existing task
   .put(updateTask)
-  // DELETE /api/tasks/:id - Delete a task by ID
+  // DELETE /api/tasks/:id - Permanently remove a task from the database
   .delete(deleteTask);
 
 export default router;
